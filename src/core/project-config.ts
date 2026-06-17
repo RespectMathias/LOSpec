@@ -16,7 +16,7 @@ import { z } from 'zod';
  * - Single source of truth for type and validation
  * - Consistent with other OpenSpec schemas
  */
-export const LeanConfigSchema = z.object({
+const LeanConfigSchema = z.object({
   enabled: z.boolean().optional(),
   root: z.string().min(1).optional(),
   command: z.string().min(1).optional(),
@@ -24,7 +24,7 @@ export const LeanConfigSchema = z.object({
   timeoutMs: z.number().int().positive().optional(),
 });
 
-export const ProjectConfigSchema = z.object({
+const ProjectConfigSchema = z.object({
   // Required: which schema to use (e.g., "spec-driven", or project-local schema name)
   schema: z
     .string()

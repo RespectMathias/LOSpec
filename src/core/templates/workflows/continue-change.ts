@@ -70,8 +70,9 @@ export function getContinueChangeSkillTemplate(): SkillTemplate {
      - Use \`template\` as the structure - fill in its sections
      - Apply \`context\` and \`rules\` as constraints when writing - but do NOT copy them into the file
      - Write to the \`resolvedOutputPath\` specified in instructions. If it is a glob pattern, choose the concrete file path using the schema instruction and workspace planning context
-   - Show what was created and what's now unlocked
-   - STOP after creating ONE artifact
+     - If this artifact defines architecture-sensitive concepts, relations, invariants, or laws, create or update the Lean model under \`openspec/formal\`
+    - Show what was created and what's now unlocked
+    - STOP after creating ONE artifact
 
    ---
 
@@ -79,7 +80,13 @@ export function getContinueChangeSkillTemplate(): SkillTemplate {
    - This shouldn't happen with a valid schema
    - Show status and suggest checking for issues
 
-4. **After creating an artifact, show progress**
+4. **Validate including Lean**
+   \`\`\`bash
+   openspec validate "<name>" --json
+   \`\`\`
+   Lean runs by default. If validation fails because the Lean model does not compile, update \`openspec/formal\` before reporting progress.
+
+5. **After creating an artifact, show progress**
    \`\`\`bash
    openspec status --change "<name>"
    \`\`\`
@@ -113,6 +120,8 @@ For other schemas, follow the \`instruction\` field from the CLI output.
 - Always read dependency artifacts before creating a new one
 - Never skip artifacts or create out of order
 - If context is unclear, ask the user before creating
+- Create or update the Lean model in \`openspec/formal\` when artifacts define modeled semantics
+- Run \`openspec validate "<name>" --json\` before reporting progress; do not use \`--no-lean\` unless the human explicitly requests structural-only validation
 - Verify the artifact file exists after writing before marking progress
 - Use the schema's artifact sequence, don't assume specific artifact names
 - **IMPORTANT**: \`context\` and \`rules\` are constraints for YOU, not content for the file
@@ -190,8 +199,9 @@ export function getOpsxContinueCommandTemplate(): CommandTemplate {
      - Use \`template\` as the structure - fill in its sections
      - Apply \`context\` and \`rules\` as constraints when writing - but do NOT copy them into the file
      - Write to the \`resolvedOutputPath\` specified in instructions. If it is a glob pattern, choose the concrete file path using the schema instruction and workspace planning context
-   - Show what was created and what's now unlocked
-   - STOP after creating ONE artifact
+     - If this artifact defines architecture-sensitive concepts, relations, invariants, or laws, create or update the Lean model under \`openspec/formal\`
+    - Show what was created and what's now unlocked
+    - STOP after creating ONE artifact
 
    ---
 
@@ -199,7 +209,13 @@ export function getOpsxContinueCommandTemplate(): CommandTemplate {
    - This shouldn't happen with a valid schema
    - Show status and suggest checking for issues
 
-4. **After creating an artifact, show progress**
+4. **Validate including Lean**
+   \`\`\`bash
+   openspec validate "<name>" --json
+   \`\`\`
+   Lean runs by default. If validation fails because the Lean model does not compile, update \`openspec/formal\` before reporting progress.
+
+5. **After creating an artifact, show progress**
    \`\`\`bash
    openspec status --change "<name>"
    \`\`\`
@@ -233,6 +249,8 @@ For other schemas, follow the \`instruction\` field from the CLI output.
 - Always read dependency artifacts before creating a new one
 - Never skip artifacts or create out of order
 - If context is unclear, ask the user before creating
+- Create or update the Lean model in \`openspec/formal\` when artifacts define modeled semantics
+- Run \`openspec validate "<name>" --json\` before reporting progress; do not use \`--no-lean\` unless the human explicitly requests structural-only validation
 - Verify the artifact file exists after writing before marking progress
 - Use the schema's artifact sequence, don't assume specific artifact names
 - **IMPORTANT**: \`context\` and \`rules\` are constraints for YOU, not content for the file

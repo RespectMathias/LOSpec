@@ -81,7 +81,18 @@ When ready to implement, run /opsx:apply
       - Use **AskUserQuestion tool** to clarify
       - Then continue with creation
 
-5. **Show final status**
+   d. **Maintain Lean model**:
+      - When specs or design introduce architecture-sensitive concepts, relations, invariants, or laws, update the Lean model under \`openspec/formal\`
+      - Keep the Lean model focused on architectural intent; do not model implementation details unless they carry required semantics
+      - If no new formal semantics are needed, state why the existing Lean model remains sufficient
+
+5. **Validate including Lean**
+   \`\`\`bash
+   openspec validate "<name>" --json
+   \`\`\`
+   Lean runs by default. If validation fails because the Lean model does not compile, update \`openspec/formal\` before reporting the change ready.
+
+6. **Show final status**
    \`\`\`bash
    openspec status --change "<name>"
    \`\`\`
@@ -109,6 +120,8 @@ After completing all artifacts, summarize:
 - Always read dependency artifacts before creating a new one
 - If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
 - If a change with that name already exists, ask if user wants to continue it or create a new one
+- Create or update the Lean model in \`openspec/formal\` when artifacts define modeled semantics
+- Run \`openspec validate "<name>" --json\` before reporting the change ready; do not use \`--no-lean\` unless the human explicitly requests structural-only validation
 - Verify each artifact file exists after writing before proceeding to next`,
     license: 'MIT',
     compatibility: 'Requires openspec CLI.',
@@ -193,7 +206,18 @@ When ready to implement, run /opsx:apply
       - Use **AskUserQuestion tool** to clarify
       - Then continue with creation
 
-5. **Show final status**
+   d. **Maintain Lean model**:
+      - When specs or design introduce architecture-sensitive concepts, relations, invariants, or laws, update the Lean model under \`openspec/formal\`
+      - Keep the Lean model focused on architectural intent; do not model implementation details unless they carry required semantics
+      - If no new formal semantics are needed, state why the existing Lean model remains sufficient
+
+5. **Validate including Lean**
+   \`\`\`bash
+   openspec validate "<name>" --json
+   \`\`\`
+   Lean runs by default. If validation fails because the Lean model does not compile, update \`openspec/formal\` before reporting the change ready.
+
+6. **Show final status**
    \`\`\`bash
    openspec status --change "<name>"
    \`\`\`
@@ -221,6 +245,8 @@ After completing all artifacts, summarize:
 - Always read dependency artifacts before creating a new one
 - If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
 - If a change with that name already exists, ask if user wants to continue it or create a new one
+- Create or update the Lean model in \`openspec/formal\` when artifacts define modeled semantics
+- Run \`openspec validate "<name>" --json\` before reporting the change ready; do not use \`--no-lean\` unless the human explicitly requests structural-only validation
 - Verify each artifact file exists after writing before proceeding to next`
   };
 }

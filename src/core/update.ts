@@ -47,6 +47,7 @@ import {
   scanInstalledWorkflows as scanInstalledWorkflowsShared,
   migrateIfNeeded as migrateIfNeededShared,
 } from './migration.js';
+import { createLeanFormalScaffold } from './lean/scaffold.js';
 
 const require = createRequire(import.meta.url);
 const { version: OPENSPEC_VERSION } = require('../../package.json');
@@ -88,6 +89,7 @@ export class UpdateCommand {
     if (!await FileSystemUtils.directoryExists(openspecPath)) {
       throw new Error(`No OpenSpec directory found. Run 'openspec init' first.`);
     }
+    await createLeanFormalScaffold(openspecPath);
 
     // 2. Perform one-time migration if needed before any legacy upgrade generation.
     // Use detected tool directories to preserve existing opsx skills/commands.

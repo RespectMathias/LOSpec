@@ -45,6 +45,7 @@ import { getGlobalConfig, type Delivery, type Profile } from './global-config.js
 import { getProfileWorkflows, CORE_WORKFLOWS, ALL_WORKFLOWS } from './profiles.js';
 import { getAvailableTools } from './available-tools.js';
 import { migrateIfNeeded } from './migration.js';
+import { createLeanFormalScaffold } from './lean/scaffold.js';
 
 const require = createRequire(import.meta.url);
 const { version: OPENSPEC_VERSION } = require('../../package.json');
@@ -465,6 +466,7 @@ export class InitCommand {
       for (const dir of directories) {
         await FileSystemUtils.createDirectory(dir);
       }
+      await createLeanFormalScaffold(openspecPath);
       return;
     }
 
@@ -480,6 +482,7 @@ export class InitCommand {
     for (const dir of directories) {
       await FileSystemUtils.createDirectory(dir);
     }
+    await createLeanFormalScaffold(openspecPath);
 
     spinner.stopAndPersist({
       symbol: PALETTE.white('▌'),
@@ -611,7 +614,14 @@ export class InitCommand {
     }
 
     try {
-      const yamlContent = serializeConfig({ schema: DEFAULT_SCHEMA });
+      const yamlContent = serializeConfig({
+        schema: DEFAULT_SCHEMA,
+        lean: {
+          root: 'openspec/formal',
+          command: 'lake',
+          args: ['build'],
+        },
+      });
       await FileSystemUtils.writeFile(configPath, yamlContent);
       return 'created';
     } catch {

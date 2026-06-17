@@ -176,9 +176,14 @@ describe('openspec CLI e2e basics', () => {
       // With --tools none, no tool skills should be created
       const claudeSkillPath = path.join(emptyProjectDir, '.claude/skills/openspec-explore/SKILL.md');
       const cursorSkillPath = path.join(emptyProjectDir, '.cursor/skills/openspec-explore/SKILL.md');
+      const formalDir = path.join(emptyProjectDir, 'openspec', 'formal');
 
       expect(await fileExists(claudeSkillPath)).toBe(false);
       expect(await fileExists(cursorSkillPath)).toBe(false);
+      expect(await fileExists(path.join(formalDir, 'lakefile.lean'))).toBe(true);
+      expect(await fileExists(path.join(formalDir, 'lean-toolchain'))).toBe(true);
+      expect(await fileExists(path.join(formalDir, 'OpenSpecFormal.lean'))).toBe(true);
+      expect(await fileExists(path.join(formalDir, 'OpenSpecFormal', 'Architecture.lean'))).toBe(true);
     });
 
     it('returns error for invalid tool names', async () => {

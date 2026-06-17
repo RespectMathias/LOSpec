@@ -32,14 +32,14 @@ import { generateSkillContent } from '../../../src/core/shared/skill-generation.
 const EXPECTED_FUNCTION_HASHES: Record<string, string> = {
   getExploreSkillTemplate: 'e2765fae6c2e960f4ce07058cfdaa547ff3435d454eacd5e924e38139e97ad52',
   getNewChangeSkillTemplate: 'b0c26f0b65380062e586505c08c72230e59dccea89e6acca7b673f01cba70d5a',
-  getContinueChangeSkillTemplate: 'fbc6c379ed3dd39f59f52b10584b8df5b1dc08b5422bcf1c6d6255a944d22a11',
+  getContinueChangeSkillTemplate: 'f53b3cf68a43b1597e04f71dfd3e7c3748c4226ea9f4bde05c9fd9ff1a890027',
   getApplyChangeSkillTemplate: '6180a698551da816560f6b43da2fc77622b1ff660a1db4852e900ea763f92b2b',
   getFfChangeSkillTemplate: '50e68fbb49b76d2690b614bffa9e6210e45539fb74419fc2e4311158b6d38485',
   getSyncSpecsSkillTemplate: '9f02b41227db70875b89eefeb275c769142607dc5b2593f4e606794aed2fdbad',
   getOnboardSkillTemplate: '4f4b60fea6e3fc7d2185815b2808fad51535fdd00cd4401b32d1536f32fa2b6d',
   getOpsxExploreCommandTemplate: '4d5e64e3ede6703113cf2fd23b797371ef2407b702478b4f7240fc81cbf2d3a5',
   getOpsxNewCommandTemplate: '757f72e2d9a1a6794b2188704fd39dd2ab65428899b4b361c76cc15a5e4f2ccc',
-  getOpsxContinueCommandTemplate: '62f8863edda2bfe4e210f8bc3095fd4369aaaaf7772a5cba9602d0f0bca1d0c9',
+  getOpsxContinueCommandTemplate: 'fb1ecc3d4334cc48ad0a90b15fb54722bb07d4dc183059a081d71f2e6c82295a',
   getOpsxApplyCommandTemplate: '79fb9ec3dcafcd09c1505f4d54b38af5311ef88bcb4d519f216d84af208dd1e3',
   getOpsxFfCommandTemplate: 'f775b242bcfd56594c431c7f31a0129208a1bacfdb2427074d412543072ef7ca',
   getArchiveChangeSkillTemplate: 'bdf022ae2cdef1feef4d641a068bef3a7fc5d98a323f7ce9f77ac578fe8d20c6',
@@ -50,15 +50,15 @@ const EXPECTED_FUNCTION_HASHES: Record<string, string> = {
   getOpsxOnboardCommandTemplate: '57c1f3e2590bda8f47818bab1d528456c1b8a9a7501f63ab9e2115e0cfaf6f35',
   getOpsxBulkArchiveCommandTemplate: 'b76c421023ccb5a12867c349f27cdb186234b692c1811980fb94127567bdabda',
   getOpsxVerifyCommandTemplate: '4c3989725d8afd441f0ee455f03c9ba2b77a13e87a50fa70da536678da2135fc',
-  getOpsxProposeSkillTemplate: 'bae22279f8c7f711a8d5c5289551551d48197ddf5a99b695d96fff5339e08a49',
-  getOpsxProposeCommandTemplate: '870ab824c2aeb825fe3fe161a1f223633b4fff308ecaeb8197cbf309db2ddf02',
+  getOpsxProposeSkillTemplate: '00ddb7c93b77142d43ed79303d4c09c192b05600e2d6eceda3219020ede167d9',
+  getOpsxProposeCommandTemplate: '732ea8faa3f05c70a054cc33219bdce4ab49d1dffef736d632bc5aff1ff14250',
   getFeedbackSkillTemplate: 'd7d83c5f7fc2b92fe8f4588a5bf2d9cb315e4c73ec19bcd5ef28270906319a0d',
 };
 
 const EXPECTED_GENERATED_SKILL_CONTENT_HASHES: Record<string, string> = {
   'openspec-explore': '28d900ef82b325beb65e69ee6435949adcfdf14a4314638e7006e6dc359b92d4',
   'openspec-new-change': 'c99989810f982d72eefc74a35f2282b71f1956f23f61b83aaa58fa3dd921716f',
-  'openspec-continue-change': 'c00e2a60f79cd60197094cc59762babe5ee6a2dc1e859a0ede3f436a775ccecf',
+  'openspec-continue-change': '7cc14c9138b0e88a5202e05434153fd14e2bfcf9f3d13120ea41843e5e246212',
   'openspec-apply-change': '80a5c7af34af9f85ca3ff3309e1716bc49b21aed298e9e03074771ad2a8e435e',
   'openspec-ff-change': '9d9b1995b6f4adb3da570676f7d11fee4cd1cf6c5df8ec83c033e02783a544df',
   'openspec-sync-specs': '2e0f67ec6fadffc6107b4b1a28eef23a99a6649e5fae706897ea1dd9deb852a8',
@@ -66,7 +66,7 @@ const EXPECTED_GENERATED_SKILL_CONTENT_HASHES: Record<string, string> = {
   'openspec-bulk-archive-change': '16207683996b1952559cd4e33463f28fb097761f2c5d912107733d01a90d3f2f',
   'openspec-verify-change': 'e172f0a70154b27379a384e2c919fc7d35bc0e6cdaf392714a3cc4c6633bf074',
   'openspec-onboard': 'b924ea3c97543ebb7ee82c5f194afe7ce87a521c32b85616f445240ab33a02ab',
-  'openspec-propose': '56aa526fe1e9fac956ad3ad570a3a259d27f54b05086940d85af136a62069292',
+  'openspec-propose': 'd02cc64569f39a3b555db562f575c1ca351d1ddba8f5513dd09d24bbf7643c4e',
 };
 
 function stableStringify(value: unknown): string {
@@ -167,6 +167,21 @@ describe('skill templates split parity', () => {
       expect(content, dirName).toContain(guardText);
       expect(content, dirName).not.toContain('openspec/changes/<name>');
       expect(content, dirName).not.toContain('mv openspec/changes');
+    }
+  });
+
+  it('requires propose and continue workflows to create or update Lean architecture model', () => {
+    const templates = [
+      getOpsxProposeSkillTemplate().instructions,
+      getOpsxProposeCommandTemplate().content,
+      getContinueChangeSkillTemplate().instructions,
+      getOpsxContinueCommandTemplate().content,
+    ];
+
+    for (const content of templates) {
+      expect(content).toContain('openspec/formal');
+      expect(content).toContain('Lean model');
+      expect(content).toContain('openspec validate "<name>" --json');
     }
   });
 });

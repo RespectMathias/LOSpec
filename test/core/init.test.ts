@@ -75,6 +75,9 @@ describe('InitCommand', () => {
 
       const content = await fs.readFile(configPath, 'utf-8');
       expect(content).toContain('schema: spec-driven');
+      expect(content).toContain('lean:');
+      expect(content).toContain('root: openspec/formal');
+      expect(content).toContain('command: lake');
     });
 
     it('should create core profile skills for Claude Code by default', async () => {

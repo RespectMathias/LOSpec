@@ -92,6 +92,16 @@ describe('UpdateCommand', () => {
 
       consoleSpy.mockRestore();
     });
+
+    it('should create Lean formal scaffold for existing projects', async () => {
+      await updateCommand.execute(testDir);
+
+      const formalDir = path.join(testDir, 'openspec', 'formal');
+      await expect(fs.access(path.join(formalDir, 'lakefile.lean'))).resolves.toBeUndefined();
+      await expect(fs.access(path.join(formalDir, 'lean-toolchain'))).resolves.toBeUndefined();
+      await expect(fs.access(path.join(formalDir, 'OpenSpecFormal.lean'))).resolves.toBeUndefined();
+      await expect(fs.access(path.join(formalDir, 'OpenSpecFormal', 'Architecture.lean'))).resolves.toBeUndefined();
+    });
   });
 
   describe('skill updates', () => {
