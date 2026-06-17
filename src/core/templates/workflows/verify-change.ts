@@ -104,12 +104,19 @@ export function getVerifyChangeSkillTemplate(): SkillTemplate {
        - Recommendation: "Update implementation or revise design.md to match reality"
    - If no design.md: Skip design adherence check, note "No design.md to verify against"
 
-   **Code Pattern Consistency**:
-   - Review new code for consistency with project patterns
-   - Check file naming, directory structure, coding style
-   - If significant deviations found:
-     - Add SUGGESTION: "Code pattern deviation: <details>"
-     - Recommendation: "Consider following project pattern: <example>"
+    **Code Pattern Consistency**:
+    - Review new code for consistency with project patterns
+    - Check file naming, directory structure, coding style
+    - If significant deviations found:
+      - Add SUGGESTION: "Code pattern deviation: <details>"
+      - Recommendation: "Consider following project pattern: <example>"
+
+    **Lean Model Coherence**:
+    - Run \`openspec validate "<name>" --json\`; Lean runs by default as part of validation
+    - If implementation changes modeled semantics, verify matching Lean files changed in the same work
+    - If Lean fails, add CRITICAL issue: "Lean model check failed: <details>"
+    - Do not use \`--no-lean\` unless the human explicitly requests structural-only validation
+    - Treat Lean as architecture intent only; do not claim full implementation correctness from a passing Lean check
 
 8. **Generate Verification Report**
 
@@ -160,6 +167,7 @@ export function getVerifyChangeSkillTemplate(): SkillTemplate {
 - If only tasks.md exists: verify task completion only, skip spec/design checks
 - If tasks + specs exist: verify completeness and correctness, skip design
 - If full artifacts: verify all three dimensions
+- Run default validation and include formal-model status from Lean results
 - Always note which checks were skipped and why
 
 **Output Format**
@@ -276,12 +284,19 @@ export function getOpsxVerifyCommandTemplate(): CommandTemplate {
        - Recommendation: "Update implementation or revise design.md to match reality"
    - If no design.md: Skip design adherence check, note "No design.md to verify against"
 
-   **Code Pattern Consistency**:
-   - Review new code for consistency with project patterns
-   - Check file naming, directory structure, coding style
-   - If significant deviations found:
-     - Add SUGGESTION: "Code pattern deviation: <details>"
-     - Recommendation: "Consider following project pattern: <example>"
+    **Code Pattern Consistency**:
+    - Review new code for consistency with project patterns
+    - Check file naming, directory structure, coding style
+    - If significant deviations found:
+      - Add SUGGESTION: "Code pattern deviation: <details>"
+      - Recommendation: "Consider following project pattern: <example>"
+
+    **Lean Model Coherence**:
+    - Run \`openspec validate "<name>" --json\`; Lean runs by default as part of validation
+    - If implementation changes modeled semantics, verify matching Lean files changed in the same work
+    - If Lean fails, add CRITICAL issue: "Lean model check failed: <details>"
+    - Do not use \`--no-lean\` unless the human explicitly requests structural-only validation
+    - Treat Lean as architecture intent only; do not claim full implementation correctness from a passing Lean check
 
 8. **Generate Verification Report**
 
@@ -332,6 +347,7 @@ export function getOpsxVerifyCommandTemplate(): CommandTemplate {
 - If only tasks.md exists: verify task completion only, skip spec/design checks
 - If tasks + specs exist: verify completeness and correctness, skip design
 - If full artifacts: verify all three dimensions
+- Run default validation and include formal-model status from Lean results
 - Always note which checks were skipped and why
 
 **Output Format**

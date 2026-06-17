@@ -626,6 +626,8 @@ openspec validate [item-name] [options]
 | `--type <type>` | Specify type when name is ambiguous: `change` or `spec` |
 | `--strict` | Enable strict validation mode |
 | `--json` | Output as JSON |
+| `--lean` | Force Lean 4 checks even if config disables them |
+| `--no-lean` | Skip default Lean 4 checks for this command |
 | `--concurrency <n>` | Max parallel validations (default: 6, or `OPENSPEC_CONCURRENCY` env) |
 | `--no-interactive` | Disable prompts |
 
@@ -644,9 +646,31 @@ openspec validate --changes
 # Validate everything with JSON output (for CI/scripts)
 openspec validate --all --json
 
+# Validate specs, changes, and Lean model in CI
+openspec validate --all --json
+
 # Strict validation with increased parallelism
 openspec validate --all --strict --concurrency 12
 ```
+
+**Default Lean checks:**
+
+OpenSpec runs Lean by default during validation. Configure `openspec/config.yaml` so the default check points at your formal model:
+
+```yaml
+lean:
+  enabled: true
+  root: openspec/formal
+  command: lake
+  args: [build, --wfail]
+  timeoutMs: 120000
+```
+
+Use `--no-lean` only for explicit structural-only checks. Use `lean.enabled: false` only when a project intentionally does not maintain a Lean model. Use `--lean` to force Lean even when config disables it.
+
+Lean models are for architecture-sensitive meaning: concepts, relations, invariants, and laws that must not silently drift. They do not replace prose specs, tests, reviews, or implementation checks.
+
+Example use: model point-like media and interval-like media as distinct concepts. Temporal overlap stays interval-to-interval, and point-within-interval stays point-to-interval. If implementation semantics change, update the Lean model. If a shortcut conflicts with the model, `openspec validate` fails.
 
 **Output (text):**
 

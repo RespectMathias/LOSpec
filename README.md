@@ -1,3 +1,19 @@
+> [!IMPORTANT]
+> This fork adds Lean validation to OpenSpec. It is published as source at [RespectMathias/LOSpec](https://github.com/RespectMathias/LOSpec), not as an npm package, so `npm install -g @fission-ai/openspec@latest` installs upstream OpenSpec without Lean support.
+>
+> To use this fork locally:
+>
+> ```bash
+> git clone https://github.com/RespectMathias/LOSpec.git
+> cd LOSpec
+> npm install
+> npm run build
+> npm install -g .
+> openspec --version
+> ```
+>
+> Run `openspec init` in new projects, or `openspec update` in existing OpenSpec projects, after linking this fork.
+
 <p align="center">
   <a href="https://github.com/Fission-AI/OpenSpec">
     <picture>
@@ -33,8 +49,7 @@ Our philosophy:
 → scalable from personal projects to enterprises
 ```
 
-> [!TIP]
-> **New workflow now available!** We've rebuilt OpenSpec with a new artifact-guided workflow.
+> [!TIP] > **New workflow now available!** We've rebuilt OpenSpec with a new artifact-guided workflow.
 >
 > Run `/opsx:propose "your idea"` to get started. → [Learn more here](docs/opsx.md)
 
@@ -114,13 +129,11 @@ If you want the expanded workflow (`/opsx:new`, `/opsx:continue`, `/opsx:ff`, `/
 → **[Multi-Language](docs/multi-language.md)**: multi-language support<br>
 → **[Customization](docs/customization.md)**: make it yours
 
-
 ## Community schemas
 
 Third-party schema bundles distributed via standalone repositories — these provide opinionated workflows that integrate OpenSpec with other tools, similar to how [github/spec-kit's community extension catalog](https://github.com/github/spec-kit/tree/main/extensions) handles tool integrations.
 
 → **[Browse the catalog](docs/customization.md#community-schemas)** in the customization docs.
-
 
 ## Why OpenSpec?
 
@@ -198,8 +211,6 @@ We collect only command names and version to understand usage patterns. No argum
 See [MAINTAINERS.md](MAINTAINERS.md) for the list of core maintainers and advisors who help guide the project.
 
 </details>
-
-
 
 ## License
 

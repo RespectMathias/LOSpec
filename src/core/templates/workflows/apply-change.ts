@@ -147,6 +147,9 @@ What would you like to do?
 - Always read context files before starting (from the apply instructions output)
 - If task is ambiguous, pause and ask before implementing
 - If implementation reveals issues, pause and suggest artifact updates
+- If implementation changes modeled semantics, update the Lean model in the same change
+- Run \`openspec validate "<name>" --json\` before reporting completion; do not use \`--no-lean\` unless the human explicitly requests structural-only validation
+- Treat Lean as architecture intent, not as proof that implementation is fully correct
 - Keep code changes minimal and scoped to each task
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess
@@ -307,6 +310,9 @@ What would you like to do?
 - Always read context files before starting (from the apply instructions output)
 - If task is ambiguous, pause and ask before implementing
 - If implementation reveals issues, pause and suggest artifact updates
+- If implementation changes modeled semantics, update the Lean model in the same change
+- Run \`openspec validate "<name>" --json\` before reporting completion; do not use \`--no-lean\` unless the human explicitly requests structural-only validation
+- Treat Lean as architecture intent, not as proof that implementation is fully correct
 - Keep code changes minimal and scoped to each task
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess

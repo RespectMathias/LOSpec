@@ -39,6 +39,14 @@ rules:
     - Identify affected teams
   specs:
     - Use Given/When/Then format
+lean:
+  enabled: true
+  root: openspec/formal
+  command: lake
+  args:
+    - build
+    - --wfail
+  timeoutMs: 120000
 `
         );
 
@@ -51,8 +59,40 @@ rules:
             proposal: ['Include rollback plan', 'Identify affected teams'],
             specs: ['Use Given/When/Then format'],
           },
+          lean: {
+            enabled: true,
+            root: 'openspec/formal',
+            command: 'lake',
+            args: ['build', '--wfail'],
+            timeoutMs: 120000,
+          },
         });
         expect(consoleWarnSpy).not.toHaveBeenCalled();
+      });
+
+      it('should ignore invalid lean config fields without aborting config parsing', () => {
+        const configDir = path.join(tempDir, 'openspec');
+        fs.mkdirSync(configDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(configDir, 'config.yaml'),
+          `schema: spec-driven
+lean:
+  enabled: yes
+  root: 123
+  command: []
+  args: build
+  timeoutMs: -1
+`
+        );
+
+        const config = readProjectConfig(tempDir);
+
+        expect(config).toEqual({
+          schema: 'spec-driven',
+        });
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining("Invalid 'lean' field")
+        );
       });
 
       it('should parse minimal config with schema only', () => {

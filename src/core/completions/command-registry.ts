@@ -87,6 +87,14 @@ export const COMMAND_REGISTRY: CommandDefinition[] = [
       COMMON_FLAGS.strict,
       COMMON_FLAGS.jsonValidation,
       {
+        name: 'lean',
+        description: 'Run Lean 4 checks',
+      },
+      {
+        name: 'no-lean',
+        description: 'Skip default Lean 4 checks',
+      },
+      {
         name: 'concurrency',
         description: 'Max concurrent validations (defaults to env OPENSPEC_CONCURRENCY or 6)',
         takesValue: true,

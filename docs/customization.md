@@ -43,6 +43,13 @@ rules:
   specs:
     - Use Given/When/Then format
     - Reference existing patterns before inventing new ones
+
+lean:
+  enabled: true
+  root: openspec/formal
+  command: lake
+  args: [build, --wfail]
+  timeoutMs: 120000
 ```
 
 ### How It Works
@@ -79,6 +86,33 @@ Tech stack: TypeScript, React, Node.js, PostgreSQL
 
 - **Context** appears in ALL artifacts
 - **Rules** ONLY appear for the matching artifact
+
+### Lean 4 Checks
+
+OpenSpec runs Lean by default during validation so important architectural intent compiles as a small Lean 4 model.
+
+```yaml
+lean:
+  enabled: true
+  root: openspec/formal
+  command: lake
+  args: [build, --wfail]
+  timeoutMs: 120000
+```
+
+`root` is resolved from project root. OpenSpec runs the command with no shell from that directory. If `enabled` is false, default validation skips Lean unless `--lean` is provided.
+
+`--no-lean` skips Lean for one structural-only command. `lean.enabled: false` disables the default Lean gate for a project. `--lean` forces Lean even when config disables it.
+
+Recommended CI command:
+
+```bash
+openspec validate --all --json
+```
+
+Lean models should capture architecture-sensitive concepts, relations, invariants, and laws. They do not replace prose specs, tests, reviews, or implementation. Agents changing modeled semantics must update the Lean model in the same change.
+
+Example model boundary: point-like media and interval-like media remain distinct. Temporal overlap is interval-to-interval. Point-within-interval is point-to-interval. Do not coerce point-like media into intervals to satisfy local tests unless the formal model is intentionally changed too.
 
 ### Schema Resolution Order
 

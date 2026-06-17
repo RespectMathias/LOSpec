@@ -16,6 +16,14 @@ import { z } from 'zod';
  * - Single source of truth for type and validation
  * - Consistent with other OpenSpec schemas
  */
+export const LeanConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  root: z.string().min(1).optional(),
+  command: z.string().min(1).optional(),
+  args: z.array(z.string()).optional(),
+  timeoutMs: z.number().int().positive().optional(),
+});
+
 export const ProjectConfigSchema = z.object({
   // Required: which schema to use (e.g., "spec-driven", or project-local schema name)
   schema: z
@@ -38,6 +46,8 @@ export const ProjectConfigSchema = z.object({
     )
     .optional()
     .describe('Per-artifact rules, keyed by artifact ID'),
+
+  lean: LeanConfigSchema.optional().describe('Lean 4 check configuration'),
 });
 
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
@@ -149,6 +159,15 @@ export function readProjectConfig(projectRoot: string): ProjectConfig | null {
         }
       } else {
         console.warn(`Invalid 'rules' field in config (must be object)`);
+      }
+    }
+
+    if (raw.lean !== undefined) {
+      const leanResult = LeanConfigSchema.safeParse(raw.lean);
+      if (leanResult.success) {
+        config.lean = leanResult.data;
+      } else {
+        console.warn(`Invalid 'lean' field in config (must be object with enabled, root, command, args, timeoutMs)`);
       }
     }
 

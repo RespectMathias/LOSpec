@@ -63,14 +63,18 @@ describe('top-level validate command', () => {
     await fs.rm(testDir, { recursive: true, force: true });
   });
 
+  function yamlQuote(value: string): string {
+    return `'${value.replace(/'/g, "''")}'`;
+  }
+
   it('prints a helpful hint when no args in non-interactive mode', async () => {
-    const result = await runCLI(['validate'], { cwd: testDir });
+    const result = await runCLI(['validate', '--no-lean'], { cwd: testDir });
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain('Nothing to validate. Try one of:');
   });
 
   it('validates all with --all and outputs JSON summary', async () => {
-    const result = await runCLI(['validate', '--all', '--json'], { cwd: testDir });
+    const result = await runCLI(['validate', '--all', '--json', '--no-lean'], { cwd: testDir });
     expect(result.exitCode).toBe(0);
     const output = result.stdout.trim();
     expect(output).not.toBe('');
@@ -81,7 +85,7 @@ describe('top-level validate command', () => {
   });
 
   it('validates only specs with --specs and respects --concurrency', async () => {
-    const result = await runCLI(['validate', '--specs', '--json', '--concurrency', '1'], { cwd: testDir });
+    const result = await runCLI(['validate', '--specs', '--json', '--concurrency', '1', '--no-lean'], { cwd: testDir });
     expect(result.exitCode).toBe(0);
     const output = result.stdout.trim();
     expect(output).not.toBe('');
@@ -127,7 +131,7 @@ describe('top-level validate command', () => {
     await fs.mkdir(deltaDir, { recursive: true });
     await fs.writeFile(path.join(deltaDir, 'spec.md'), deltaContent, 'utf-8');
 
-    const result = await runCLI(['validate', changeId], { cwd: testDir });
+    const result = await runCLI(['validate', changeId, '--no-lean'], { cwd: testDir });
     expect(result.exitCode).toBe(0);
   });
 
@@ -135,7 +139,7 @@ describe('top-level validate command', () => {
     // This test ensures Commander.js --no-interactive flag is correctly parsed
     // and passed to the validate command. The flag sets options.interactive = false
     // (not options.noInteractive = true) due to Commander.js convention.
-    const result = await runCLI(['validate', '--specs', '--no-interactive'], {
+    const result = await runCLI(['validate', '--specs', '--no-interactive', '--no-lean'], {
       cwd: testDir,
       // Don't set OPEN_SPEC_INTERACTIVE to ensure we're testing the flag itself
       env: { ...process.env, OPEN_SPEC_INTERACTIVE: undefined },
@@ -143,5 +147,89 @@ describe('top-level validate command', () => {
     expect(result.exitCode).toBe(0);
     // Should complete without hanging and without prompts
     expect(result.stderr).not.toContain('What would you like to validate?');
+  });
+
+  it('runs Lean by default and fails when the formal root is missing', async () => {
+    const result = await runCLI(['validate', '--all', '--json'], { cwd: testDir });
+
+    expect(result.exitCode).toBe(1);
+    const json = JSON.parse(result.stdout.trim());
+    expect(json.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'formal',
+        type: 'lean',
+        valid: false,
+        issues: [expect.objectContaining({
+          level: 'ERROR',
+          message: expect.stringContaining('Lean root not found'),
+        })],
+      }),
+    ]));
+    expect(json.summary.byType.lean).toEqual({ items: 1, passed: 0, failed: 1 });
+  });
+
+  it('runs configured Lean check with --lean and includes it in JSON output', async () => {
+    const formalDir = path.join(testDir, 'openspec', 'formal');
+    await fs.mkdir(formalDir, { recursive: true });
+    const script = path.join(testDir, 'fake-lean-success.mjs');
+    await fs.writeFile(script, 'console.log("lean ok");\n', 'utf-8');
+    await fs.writeFile(
+      path.join(testDir, 'openspec', 'config.yaml'),
+      [
+        'schema: spec-driven',
+        'lean:',
+        '  root: openspec/formal',
+        `  command: ${yamlQuote(process.execPath)}`,
+        '  args:',
+        `    - ${yamlQuote(script)}`,
+        '  timeoutMs: 5000',
+      ].join('\n'),
+      'utf-8'
+    );
+
+    const result = await runCLI(['validate', '--all', '--lean', '--json'], { cwd: testDir });
+
+    expect(result.exitCode).toBe(0);
+    const json = JSON.parse(result.stdout.trim());
+    expect(json.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'formal',
+        type: 'lean',
+        valid: true,
+        issues: [],
+      }),
+    ]));
+    expect(json.summary.byType.lean).toEqual({ items: 1, passed: 1, failed: 0 });
+  });
+
+  it('runs only configured Lean check when --lean has no validation scope', async () => {
+    const formalDir = path.join(testDir, 'openspec', 'formal');
+    await fs.mkdir(formalDir, { recursive: true });
+    const script = path.join(testDir, 'fake-lean-only.mjs');
+    await fs.writeFile(script, 'console.log("lean only ok");\n', 'utf-8');
+    await fs.writeFile(
+      path.join(testDir, 'openspec', 'config.yaml'),
+      [
+        'schema: spec-driven',
+        'lean:',
+        '  root: openspec/formal',
+        `  command: ${yamlQuote(process.execPath)}`,
+        '  args:',
+        `    - ${yamlQuote(script)}`,
+        '  timeoutMs: 5000',
+      ].join('\n'),
+      'utf-8'
+    );
+
+    const result = await runCLI(['validate', '--lean', '--json'], { cwd: testDir });
+
+    expect(result.exitCode).toBe(0);
+    const json = JSON.parse(result.stdout.trim());
+    expect(json.items).toHaveLength(1);
+    expect(json.items[0]).toEqual(expect.objectContaining({
+      id: 'formal',
+      type: 'lean',
+      valid: true,
+    }));
   });
 });

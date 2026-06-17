@@ -1,11 +1,14 @@
 import ora from 'ora';
 import path from 'path';
+import { readProjectConfig, type ProjectConfig } from '../core/project-config.js';
+import { runLeanCheck } from '../core/lean/checker.js';
 import { Validator } from '../core/validation/validator.js';
+import type { ValidationIssue } from '../core/validation/types.js';
 import { isInteractive, resolveNoInteractive } from '../utils/interactive.js';
 import { getActiveChangeIds, getSpecIds } from '../utils/item-discovery.js';
 import { nearestMatches } from '../utils/match.js';
 
-type ItemType = 'change' | 'spec';
+type ItemType = 'change' | 'spec' | 'lean';
 
 interface ExecuteOptions {
   all?: boolean;
@@ -14,6 +17,7 @@ interface ExecuteOptions {
   type?: string;
   strict?: boolean;
   json?: boolean;
+  lean?: boolean;
   noInteractive?: boolean;
   interactive?: boolean; // Commander sets this to false when --no-interactive is used
   concurrency?: string;
@@ -23,27 +27,34 @@ interface BulkItemResult {
   id: string;
   type: ItemType;
   valid: boolean;
-  issues: { level: 'ERROR' | 'WARNING' | 'INFO'; path: string; message: string }[];
+  issues: ValidationIssue[];
   durationMs: number;
 }
 
 export class ValidateCommand {
   async execute(itemName: string | undefined, options: ExecuteOptions = {}): Promise<void> {
     const interactive = isInteractive(options);
+    const config = readProjectConfig(process.cwd());
+    const runLean = options.lean === true || (options.lean !== false && config?.lean?.enabled !== false);
 
     // Handle bulk flags first
     if (options.all || options.changes || options.specs) {
       await this.runBulkValidation({
         changes: !!options.all || !!options.changes,
         specs: !!options.all || !!options.specs,
-      }, { strict: !!options.strict, json: !!options.json, concurrency: options.concurrency, noInteractive: resolveNoInteractive(options) });
+      }, { strict: !!options.strict, json: !!options.json, concurrency: options.concurrency, noInteractive: resolveNoInteractive(options), lean: runLean, leanConfig: config?.lean });
+      return;
+    }
+
+    if (!itemName && runLean) {
+      await this.runLeanValidation({ json: !!options.json, leanConfig: config?.lean });
       return;
     }
 
     // No item and no flags
     if (!itemName) {
       if (interactive) {
-        await this.runInteractiveSelector({ strict: !!options.strict, json: !!options.json, concurrency: options.concurrency });
+        await this.runInteractiveSelector({ strict: !!options.strict, json: !!options.json, concurrency: options.concurrency, lean: runLean, leanConfig: config?.lean });
         return;
       }
       this.printNonInteractiveHint();
@@ -53,7 +64,7 @@ export class ValidateCommand {
 
     // Direct item validation with type detection or override
     const typeOverride = this.normalizeType(options.type);
-    await this.validateDirectItem(itemName, { typeOverride, strict: !!options.strict, json: !!options.json });
+    await this.validateDirectItem(itemName, { typeOverride, strict: !!options.strict, json: !!options.json, lean: runLean, leanConfig: config?.lean });
   }
 
   private normalizeType(value?: string): ItemType | undefined {
@@ -63,7 +74,7 @@ export class ValidateCommand {
     return undefined;
   }
 
-  private async runInteractiveSelector(opts: { strict: boolean; json: boolean; concurrency?: string }): Promise<void> {
+  private async runInteractiveSelector(opts: { strict: boolean; json: boolean; concurrency?: string; lean?: boolean; leanConfig?: ProjectConfig['lean'] }): Promise<void> {
     const { select } = await import('@inquirer/prompts');
     const choice = await select({
       message: 'What would you like to validate?',
@@ -102,7 +113,7 @@ export class ValidateCommand {
     console.error('Or run in an interactive terminal.');
   }
 
-  private async validateDirectItem(itemName: string, opts: { typeOverride?: ItemType; strict: boolean; json: boolean }): Promise<void> {
+  private async validateDirectItem(itemName: string, opts: { typeOverride?: ItemType; strict: boolean; json: boolean; lean?: boolean; leanConfig?: ProjectConfig['lean'] }): Promise<void> {
     const [changes, specs] = await Promise.all([getActiveChangeIds(), getSpecIds()]);
     const isChange = changes.includes(itemName);
     const isSpec = specs.includes(itemName);
@@ -127,13 +138,19 @@ export class ValidateCommand {
     await this.validateByType(type, itemName, opts);
   }
 
-  private async validateByType(type: ItemType, id: string, opts: { strict: boolean; json: boolean }): Promise<void> {
+  private async validateByType(type: ItemType, id: string, opts: { strict: boolean; json: boolean; lean?: boolean; leanConfig?: ProjectConfig['lean'] }): Promise<void> {
     const validator = new Validator(opts.strict);
     if (type === 'change') {
       const changeDir = path.join(process.cwd(), 'openspec', 'changes', id);
       const start = Date.now();
       const report = await validator.validateChangeDeltaSpecs(changeDir);
       const durationMs = Date.now() - start;
+      if (opts.lean) {
+        const leanResult = await this.runLeanItem(opts.leanConfig);
+        this.printResults([{ id, type, valid: report.valid, issues: report.issues, durationMs }, leanResult], opts.json);
+        process.exitCode = report.valid && leanResult.valid ? 0 : 1;
+        return;
+      }
       this.printReport('change', id, report, durationMs, opts.json);
       // Non-zero exit if invalid (keeps enriched output test semantics)
       process.exitCode = report.valid ? 0 : 1;
@@ -143,6 +160,12 @@ export class ValidateCommand {
     const start = Date.now();
     const report = await validator.validateSpec(file);
     const durationMs = Date.now() - start;
+    if (opts.lean) {
+      const leanResult = await this.runLeanItem(opts.leanConfig);
+      this.printResults([{ id, type, valid: report.valid, issues: report.issues, durationMs }, leanResult], opts.json);
+      process.exitCode = report.valid && leanResult.valid ? 0 : 1;
+      return;
+    }
     this.printReport('spec', id, report, durationMs, opts.json);
     process.exitCode = report.valid ? 0 : 1;
   }
@@ -181,7 +204,50 @@ export class ValidateCommand {
     bullets.forEach(b => console.error(`  ${b}`));
   }
 
-  private async runBulkValidation(scope: { changes: boolean; specs: boolean }, opts: { strict: boolean; json: boolean; concurrency?: string; noInteractive?: boolean }): Promise<void> {
+  private async runLeanValidation(opts: { json: boolean; leanConfig?: ProjectConfig['lean'] }): Promise<void> {
+    const result = await this.runLeanItem(opts.leanConfig);
+    this.printResults([result], opts.json);
+    process.exitCode = result.valid ? 0 : 1;
+  }
+
+  private async runLeanItem(leanConfig?: ProjectConfig['lean']): Promise<BulkItemResult> {
+    const start = Date.now();
+    const report = await runLeanCheck({ projectRoot: process.cwd(), lean: leanConfig });
+    return {
+      id: 'formal',
+      type: 'lean',
+      valid: report.valid,
+      issues: report.issues,
+      durationMs: Date.now() - start,
+    };
+  }
+
+  private printResults(results: BulkItemResult[], json: boolean): void {
+    const passed = results.filter(result => result.valid).length;
+    const failed = results.length - passed;
+    const summary = {
+      totals: { items: results.length, passed, failed },
+      byType: summarizeAllTypes(results),
+    };
+
+    if (json) {
+      console.log(JSON.stringify({ items: results, summary, version: '1.0' }, null, 2));
+      return;
+    }
+
+    for (const result of results) {
+      const prefix = result.valid ? '✓' : '✗';
+      console.log(`${prefix} ${result.type}/${result.id}`);
+      if (!result.valid) {
+        for (const issue of result.issues) {
+          console.error(`  [${issue.level}] ${issue.path}: ${issue.message}`);
+        }
+      }
+    }
+    console.log(`Totals: ${passed} passed, ${failed} failed (${results.length} items)`);
+  }
+
+  private async runBulkValidation(scope: { changes: boolean; specs: boolean }, opts: { strict: boolean; json: boolean; concurrency?: string; noInteractive?: boolean; lean?: boolean; leanConfig?: ProjectConfig['lean'] }): Promise<void> {
     const spinner = !opts.json && !opts.noInteractive ? ora('Validating...').start() : undefined;
     const [changeIds, specIds] = await Promise.all([
       scope.changes ? getActiveChangeIds() : Promise.resolve<string[]>([]),
@@ -211,6 +277,9 @@ export class ValidateCommand {
         const durationMs = Date.now() - start;
         return { id, type: 'spec' as const, valid: report.valid, issues: report.issues, durationMs };
       });
+    }
+    if (opts.lean) {
+      queue.push(async () => this.runLeanItem(opts.leanConfig));
     }
 
     if (queue.length === 0) {
@@ -281,8 +350,7 @@ export class ValidateCommand {
     } as const;
 
     if (opts.json) {
-      const out = { items: results, summary, version: '1.0' };
-      console.log(JSON.stringify(out, null, 2));
+      this.printResults(results, true);
     } else {
       for (const res of results) {
         if (res.valid) console.log(`✓ ${res.type}/${res.id}`);
@@ -303,6 +371,16 @@ function summarizeType(results: BulkItemResult[], type: ItemType) {
   return { items, passed, failed };
 }
 
+function summarizeAllTypes(results: BulkItemResult[]) {
+  return (['change', 'spec', 'lean'] as const).reduce((summary, type) => {
+    const typeSummary = summarizeType(results, type);
+    if (typeSummary.items > 0) {
+      summary[type] = typeSummary;
+    }
+    return summary;
+  }, {} as Partial<Record<ItemType, { items: number; passed: number; failed: number }>>);
+}
+
 function normalizeConcurrency(value?: string): number | undefined {
   if (!value) return undefined;
   const n = parseInt(value, 10);
@@ -314,6 +392,7 @@ function getPlannedId(index: number, changeIds: string[], specIds: string[]): st
   const totalChanges = changeIds.length;
   if (index < totalChanges) return changeIds[index];
   const specIndex = index - totalChanges;
+  if (specIndex === specIds.length) return 'formal';
   return specIds[specIndex];
 }
 
@@ -322,5 +401,6 @@ function getPlannedType(index: number, changeIds: string[], specIds: string[]): 
   if (index < totalChanges) return 'change';
   const specIndex = index - totalChanges;
   if (specIndex >= 0 && specIndex < specIds.length) return 'spec';
+  if (specIndex === specIds.length) return 'lean';
   return undefined;
 }
